@@ -1,50 +1,44 @@
 <template>
-<div class="hidden">
+  <div class="hidden">
     <div class="news-root">
-        <h1 class="news-text1">Актуальные <span class="news-span1">новости</span></h1>
-        <div class="news-containers"
-            :style="{
-                height: newscontheight + 'px',
-                overflow: 'hidden'
-            }"
-            ref="newsContainers">
-            <div class="news-cont"
-                v-for="(cont, index) in conts"
-                :key="index">
-                
-            </div>  
+      <h1 class="news-text1">Актуальные <span class="news-span1">новости</span></h1>
+      <div
+        class="news-containers"
+        :style="{ height: newscontheight + 'px', overflow: 'hidden' }"
+        ref="newsContainers"
+      >
+        <div class="news-cont" v-for="item in news" :key="item.id">
+          <img :src="item.image" class="news-image" />
+          <h1 class="text-news1">{{ item.title }}</h1>
+          <h1 class="text-news2">{{ item.date }}</h1>
         </div>
-        <div class="buttons">
-            <button @click="increaseHeight"
-                class="addnews-btn"
-                :style="{
-                    width: widthbtnadd,
-                    backgroundColor:btnaddcolor
-                }">
-                {{ textbtnadd }}
-            </button>
-            <button
-                class="startnews-btn"
-                :style="{
-                    opacity: startbtnop,
-                    display: startbtndisp
-                }"
-                @click="startHeight">
-                Свернуть обратно
-            </button>
-        </div>
+      </div>
+      <div class="buttons">
+        <button
+          @click="increaseHeight"
+          class="addnews-btn"
+          :style="{ width: widthbtnadd, backgroundColor: btnaddcolor }"
+        >
+          {{ textbtnadd }}
+        </button>
+        <button
+          class="startnews-btn"
+          :style="{ opacity: startbtnop, display: startbtndisp }"
+          @click="startHeight"
+        >
+          Свернуть обратно
+        </button>
+      </div>
     </div>
-</div>
-    
-    
+  </div>
 </template>
 
 <script>
-import { supabase } from './SupabaseClient.js'
+import axios from './TheAxios.js';
+
 export default {
   data() {
     return {
-      conts: [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}],
       newscontheight: 440,
       textbtnadd: 'Показать еще',
       btnaddcolor: '#4077CE',
@@ -52,18 +46,58 @@ export default {
       startbtnop: 0,
       startbtndisp: 'none',
       screenWidth: window.innerWidth,
-      user: null
+      isLoading: false,
+      error: null,
+      news: [],
     };
   },
-  computed: {
-    isSmallScreen() {
-      return this.screenWidth <= 700;
-    }
+
+  mounted() {
+    window.addEventListener('resize', this.updateWidth);
+
+    window.requestAnimationFrame(() => {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('show');
+          } else {
+            entry.target.classList.remove('show');
+          }
+        });
+      }, {
+        threshold: 0.1
+      });
+
+      const hiddenElements = document.querySelectorAll('.hidden');
+      hiddenElements.forEach((el) => observer.observe(el));
+    });
+
+    this.fetchData();
   },
+
+  beforeDestroy() {
+    window.removeEventListener('resize', this.updateWidth);
+  },
+
   methods: {
+    async fetchData() {
+      this.isLoading = true;
+      this.error = null;
+
+      try {
+        const response = await axios.get('/news'); 
+        this.news = response.data;
+        console.log(this.news);
+      } catch (err) {
+        this.error = err.message;
+        console.error('Error fetching data:', err);
+      } finally {
+        this.isLoading = false;
+      }
+    },
     increaseHeight() {
       if (this.isSmallScreen) {
-        this.newscontheight += 430;
+        this.newscontheight += 425;
         if (this.newscontheight > 4720) {
           this.newscontheight = 4720;
           this.textbtnadd = 'Новости закончились';
@@ -76,7 +110,7 @@ export default {
           this.startbtndisp = 'none';
         }
       } else {
-        this.newscontheight += 440;
+        this.newscontheight += 430;
         if (this.newscontheight > 1720) {
           this.newscontheight = 1720;
           this.textbtnadd = 'Новости закончились';
@@ -102,22 +136,11 @@ export default {
       this.screenWidth = window.innerWidth;
     }
   },
-  async mounted() {
-    window.addEventListener('resize', this.updateWidth);
-    const { data, error } = await supabase
-      .from('users') // замените на правильное имя таблицы
-      .select('*')
-      .eq('id', '9bef0eeb-a27d-4d0d-9828-9200be823f7b') 
-      .single()
 
-    if (error) {
-      console.error('Error fetching user:', error)
-    } else {
-      this.user = data
+  computed: {
+    isSmallScreen() {
+      return this.screenWidth <= 700;
     }
-  },
-  beforeDestroy() {
-    window.removeEventListener('resize', this.updateWidth);
   }
 };
 </script>
@@ -125,6 +148,24 @@ export default {
 
 
 <style scoped>
+.text-news1 {
+  margin-left: 15px;
+  margin-top: 15px;
+  width: 90%;
+  height: 100px;
+  font-size: 20px;
+}
+.text-news2 {
+  color: grey;
+  font-size: 15px;
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
+}
+.news-image {
+  width: 300px;
+  height: 200px;
+}
 .hidden {
     max-width: 1240px;
     min-width: 300px;
@@ -232,7 +273,9 @@ export default {
     margin-left: 15px;
     background-color: white;
     opacity: 0.3;
+    position: relative;
     margin-top: 25px;
+    overflow: hidden;
     transition: all 0.5s ease;
 }
 .news-cont:hover {

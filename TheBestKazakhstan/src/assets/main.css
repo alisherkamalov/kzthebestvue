@@ -7,3 +7,10 @@
 body {
   background-color: white;
 }
+main {
+  display: flex;
+  flex-direction: column;
+}
+h1 {
+  font-family: 'Inter';
+}

@@ -16,8 +16,9 @@
   export default {
     components: { TheNav, TheHeader, TheNews },
     data() {
-      return {}; // Возвращаем пустой объект
-    }
+      return {}; 
+    },
+    
   }
   </script>
   

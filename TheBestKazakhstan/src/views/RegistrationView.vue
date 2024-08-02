@@ -13,15 +13,17 @@ export default {
 
 <template>
   <main>
-    <TheNav></TheNav>
-    <TheReg></TheReg>
+    <div class="reg-div">
+      <TheNav></TheNav>
+      <TheReg></TheReg>
+    </div>
+    
   </main>
 </template>
 <style>
-main {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
+.reg-div {
+  display: flex;
+  justify-content: center;
+  
 }
 </style>

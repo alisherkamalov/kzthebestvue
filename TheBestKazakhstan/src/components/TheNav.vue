@@ -43,7 +43,7 @@
                     :style="{
                         width:buttonburger.width
                     }">
-                    <RouterLink 
+                    <RouterLink class="router"
                 :to="buttonburger.route">{{ buttonburger.text }}</RouterLink>
                 </button>
             </div>
@@ -75,6 +75,24 @@ export default {
       isOpen: false,
     };
   },
+  mounted() {
+            window.requestAnimationFrame(() => {
+              const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('show'); 
+                    } else {
+                        entry.target.classList.remove('show'); 
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+        
+                const hiddenElements = document.querySelectorAll('.hidden');
+                hiddenElements.forEach((el) => observer.observe(el));
+            });
+    },
   methods: {
     toggleMenu() {
       this.isOpen = !this.isOpen;
