@@ -1,116 +1,181 @@
 <template>
-    <div class="hidden">
-      <div class="root-reg">
-        <img src="/bg-a-r.jpg" class="bg-img" loading="eager">
-        <div class="reg-cont">
-          <img src="/logoreg.jpeg" class="logo-reg" />
-          <input class="name-input" placeholder="Имя Фамилия" v-model="name" />
-          <input class="pass-input" placeholder="Пароль" v-model="pass" />
-          <input class="phone-input" placeholder="Номер Телефона" v-model="phone" />
-          <h1 class="reg-message" :style="{ opacity: opacityerror }">
-            Такой пользователь уже существует!
-          </h1>
-          <button
-            v-for="(buttonreg, index) in buttonsreg"
-            :key="index"
-            class="button-reg"
-            :style="{
-              width: buttonreg.width,
-              position: buttonreg.position,
-              left: buttonreg.left,
-              bottom: buttonreg.bottom,
-              fontSize: buttonreg.size
-            }"
-            @click="buttonreg.click"
-          >
-            {{ buttonreg.text }}
-          </button>
-        </div>
+  <div class="hidden">
+    <div class="root-reg">
+      <img src="/bg-a-r.jpg" class="bg-img" loading="eager">
+      <div class="reg-cont">
+        <img src="/logoreg.jpeg" class="logo-reg" />
+        <input v-model="name" class="name-input" placeholder="Имя Фамилия" />
+        <input v-model="pass" class="pass-input" placeholder="Пароль" type="password"/>
+        <input v-model="phone" class="phone-input" placeholder="Номер Телефона" type="number"/>
+        <h1 class="reg-message" :style="{ opacity: opacityerror }">
+          {{texterror}}
+        </h1>
+        <button
+          v-for="(buttonreg, index) in buttonsreg"
+          :key="index"
+          class="button-reg"
+          :style="{
+            width: buttonreg.width,
+            position: buttonreg.position,
+            left: buttonreg.left,
+            bottom: buttonreg.bottom,
+            fontSize: buttonreg.size
+          }"
+          @click="buttonreg.click"
+        >
+          {{ buttonreg.text }}
+        </button>
       </div>
     </div>
-  </template>
-  
-  <script>
-  import { RouterLink } from 'vue-router';
-  
-  export default {
-    data() {
-      return {
-        buttonsreg: [
-          {
-            text: 'Зарегистрироваться',
-            width: '90%',
-            position: 'relative',
-            left: 'auto',
-            bottom: 'auto',
-            size: '17px',
-            click: this.registration,
+  </div>
+</template>
+<script>
+import axios from 'axios';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { v4 as uuidv4 } from 'uuid';
+
+export default {
+  setup() {
+    const router = useRouter();
+    const name = ref('');
+    const pass = ref('');
+    const phone = ref('');
+    const opacityerror = ref('0');
+    const texterror = ref('Такой аккаунт уже существует!');
+    const token_user = ref(uuidv4());
+
+    const userData = ref({
+      fullname: '',
+      password: '',
+      phone: '',
+      token: token_user.value,
+    });
+
+    const checkDuplicateUser = async (userData) => {
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/users/', {
+          params: {
+            fullname: userData.fullname,
+            password: userData.password,
+            phone: userData.phone
           },
-          {
-            text: 'Уже есть аккаунт? Войти',
-            width: '200px',
-            position: 'absolute',
-            left: '30px',
-            bottom: '25px',
-            size: '12px',
-            click: () => { console.log('Login clicked'); },
-            route: '/login'
-          }
-        ],
-        name: '',
-        pass: '',
-        phone: '',
-        opacityerror: '0'
-      };
-    },
-    methods: {
-      async registration(event) {
-        event.preventDefault();
-        const res = await fetch("https://692eb84a7af2e99d.mokky.dev/register", {
-            method: "POST",
-            headers: {
-                 Accept: "application/json",
-                 "Content-Type": "application/json"
-                },
-            body: JSON.stringify({
-                fullName: this.name,
-                phone: this.phone,
-                password:this.pass
-            })
+          headers: { Accept: 'application/json' }
         });
-        const json = res.json();
-        console.log(json);
-        if (res.ok) {
-            this.opacityerror = '0';
-        }
-        else {
-            this.opacityerror = '1';
-        }
-        
-        
+
+        // Check if any user matches the given fullname, password, or phone
+        const users = response.data;
+        return users.some(user => 
+          user.fullname === userData.fullname || 
+          user.password === userData.password || 
+          user.phone === userData.phone
+        );
+      } catch (error) {
+        console.error('Error checking duplicate user:', error);
+        return false;
       }
-      
-    },
-    mounted() {
-      window.requestAnimationFrame(() => {
-        const observer = new IntersectionObserver((entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('show');
-            } else {
-              entry.target.classList.remove('show');
-            }
-          });
-        }, {
-          threshold: 0.1
+    };
+
+    const createUser = async () => {
+      try {
+        const isDuplicate = await checkDuplicateUser(userData.value);
+        if (isDuplicate) {
+          opacityerror.value = '1';
+          console.error('User already exists with similar data');
+          return;
+        }
+
+        const response = await axios.post('http://127.0.0.1:8000/users/', userData.value, {
+          headers: {
+            'Content-Type': 'application/json',
+          }
         });
+        console.log('User created:', response.data);
+        router.push('/')
+        return response.data;
+      } catch (error) {
+        if (error.response) {
+          console.error('Error response data:', error.response.data);
+        }
+        console.error('Error creating user:', error);
+        throw error;
+      }
+    };
+
+    const onRegisterButtonClick = async () => {
+      userData.value.fullname = name.value;
+      userData.value.password = pass.value;
+      userData.value.phone = phone.value;
+      userData.value.token = token_user.value;
+      localStorage.setItem('userToken', userData.value.token);
+      await createUser();
+    };
+
+    const buttonsreg = [
+      {
+        text: 'Зарегистрироваться',
+        width: '90%',
+        position: 'relative',
+        left: 'auto',
+        bottom: 'auto',
+        size: '17px',
+        click: onRegisterButtonClick
+      },
+      {
+        text: 'Уже есть аккаунт? Войти',
+        width: '200px',
+        position: 'absolute',
+        left: '30px',
+        bottom: '25px',
+        size: '12px',
+        click: '',
+        route: '/login'
+      }
+    ];
+
+    return {
+      buttonsreg,
+      name,
+      pass,
+      phone,
+      opacityerror,
+      texterror,
+      userData,
+      token_user
+    };
+  },
   
-        const hiddenElements = document.querySelectorAll('.hidden');
-        hiddenElements.forEach((el) => observer.observe(el));
+  mounted() {
+    window.requestAnimationFrame(() => {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('show');
+          } else {
+            entry.target.classList.remove('show');
+          }
+        });
+      }, {
+        threshold: 0.1
       });
-    }
-  };
-  </script>
+
+      const hiddenElements = document.querySelectorAll('.hidden');
+      hiddenElements.forEach((el) => observer.observe(el));
+    });
+  }
+};
+</script>
+
+
+
+
+
+
+
+
+
+
+
   
 
 <style>

@@ -1,15 +1,16 @@
 <template>
   <div class="hidden">
-    <div class="news-root">
+    <div class="news-root" v-auto-animate>
       <h1 class="news-text1">Актуальные <span class="news-span1">новости</span></h1>
       <div
         class="news-containers"
         :style="{ height: newscontheight + 'px', overflow: 'hidden' }"
         ref="newsContainers"
+        v-auto-animate
       >
         <div class="news-cont" v-for="item in news" :key="item.id">
           <img :src="item.image" class="news-image" />
-          <h1 class="text-news1">{{ item.title }}</h1>
+          <h1 class="text-news1">{{ item.name }}</h1>
           <h1 class="text-news2">{{ item.date }}</h1>
         </div>
       </div>
@@ -34,8 +35,7 @@
 </template>
 
 <script>
-import axios from './TheAxios.js';
-
+import axios from 'axios';
 export default {
   data() {
     return {
@@ -65,7 +65,8 @@ export default {
           }
         });
       }, {
-        threshold: 0.1
+      rootMargin: '0px 0px -100px 0px',
+      threshold: 0.1
       });
 
       const hiddenElements = document.querySelectorAll('.hidden');
@@ -85,9 +86,8 @@ export default {
       this.error = null;
 
       try {
-        const response = await axios.get('/news'); 
+        const response = await axios.get('http://127.0.0.1:8000/items/?format=json'); 
         this.news = response.data;
-        console.log(this.news);
       } catch (err) {
         this.error = err.message;
         console.error('Error fetching data:', err);
@@ -98,8 +98,8 @@ export default {
     increaseHeight() {
       if (this.isSmallScreen) {
         this.newscontheight += 425;
-        if (this.newscontheight > 4720) {
-          this.newscontheight = 4720;
+        if (this.newscontheight > 5020) {
+          this.newscontheight = 5120;
           this.textbtnadd = 'Новости закончились';
           this.btnaddcolor = 'grey';
           this.widthbtnadd = '250px';
@@ -225,7 +225,7 @@ export default {
 .addnews-btn:hover {
     color: white;
     background-color: #4077CE;
-    border: 0;
+    border: 1px solid white;
 }
 .news-root {
     display: flex;

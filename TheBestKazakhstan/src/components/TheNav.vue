@@ -1,105 +1,177 @@
 <template>
-        <div class="thenav"> 
-            <div class="left-nav">
-                <RouterLink to="/">
-                    <img src="/logo.png" class="logo" />
-                </RouterLink>
-            </div>
-            <div class="right-nav">
-                <button v-for="(button,index) in buttons"
-                :key="index"
-                class="nav-button"
-                :style="{
-                    width:button.width
-                }">
-                <RouterLink class="router"
-                :to="button.route">{{ button.text }}</RouterLink>
-                </button>
-                <div class="burger-button" @click="toggleMenu">
-                    <div 
-                      class="line-burger-btn" 
-                      v-for="(line, index) in lines" 
-                      :key="index"
-                    ></div>
-                </div>
-            </div>
+    <div class="thenav"> 
+      <div class="left-nav">
+        <RouterLink to="/">
+          <img src="/logo.png" class="logo" />
+        </RouterLink>
+      </div>
+      <div class="right-nav">
+        <button
+          v-for="(button, index) in buttons"
+          :key="index"
+          class="nav-button"
+          :style="{ width: button.width, display: button.display }"
+        >
+          <RouterLink class="router" :to="button.route">{{ button.text }}</RouterLink>
+        </button>
+        <div class="burger-button" @click="toggleMenu">
+          <div class="line-burger-btn" v-for="(line, index) in lines" :key="index"></div>
         </div>
-        <div :class="{ 'burger-menu': true, active: isOpen }">
-            <div class="open-burger-menu-white">
-                <div class="close-burger-button"  @click="toggleMenu">
-                    <div class="close-lines"  v-for="(closeline, index) in closelines" 
-                    :key="index"
-                    :style="{
-                        rotate: closeline.rotate,
-                        translate: closeline.offset
-                    }"></div>
-                    
-                    
-                </div>
-                <img src="/logo.png" class="logo-burger"/>
-                <button v-for="(buttonburger,index) in buttonburgers"
-                    :key="index"
-                    class="nav-button-burger"
-                    :style="{
-                        width:buttonburger.width
-                    }">
-                    <RouterLink class="router"
-                :to="buttonburger.route">{{ buttonburger.text }}</RouterLink>
-                </button>
-            </div>
-            <div class="open-burger-menu-black" @click="toggleMenu"></div>
-          </div>
-    
-    
-    
-</template>
+      </div>
+    </div>
+    <div :class="{ 'burger-menu': true, active: isOpen }">
+      <div class="open-burger-menu-white">
+        <div class="close-burger-button" @click="toggleMenu">
+          <div class="close-lines" v-for="(closeline, index) in closelines" :key="index" :style="{ rotate: closeline.rotate, translate: closeline.offset }"></div>
+        </div>
+        <img src="/logo.png" class="logo-burger"/>
+        <button
+          v-for="(buttonburger, index) in buttonburgers"
+          :key="index"
+          class="nav-button-burger"
+          :style="{ width: buttonburger.width, display: buttonburger.display }"
+        >
+          <RouterLink class="router" :to="buttonburger.route">{{ buttonburger.text }}</RouterLink>
+        </button>
+      </div>
+      <div class="open-burger-menu-black" @click="toggleMenu"></div>
+    </div>
+  </template>
+  
 
-<script>
-import { RouterLink } from 'vue-router';
-export default {
-  data() {
-    return {
-      buttons: [
-        { text: 'Регистрация', width: '150px',route:'/registration' },
-        { text: 'Вход', width: '75px',route:'/authorization' },
-      ],
-      lines: [{}, {}, {}],
-      buttonburgers: [
-        { text: 'Регистрация', width: '150px',route:'/registration' },
-        { text: 'Вход', width: '150px',route:'/authorization' },
-      ],
-      closelines: [
-        { rotate: '130deg', offset: '0px 5px' },
-        { rotate: '-130deg', offset: '0px -4.75px' }
-      ],
-      isOpen: false,
-    };
-  },
-  mounted() {
-            window.requestAnimationFrame(() => {
-              const observer = new IntersectionObserver((entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('show'); 
-                    } else {
-                        entry.target.classList.remove('show'); 
-                    }
-                });
-            }, {
-                threshold: 0.1
-            });
-        
-                const hiddenElements = document.querySelectorAll('.hidden');
-                hiddenElements.forEach((el) => observer.observe(el));
-            });
+  <script>
+  import { RouterLink } from 'vue-router';
+  
+  export default {
+    data() {
+      return {
+        buttons: [
+          { text: 'Регистрация', width: '150px', route: '/registration', display: 'flex' },
+          { text: 'Вход', width: '75px', route: '/authorization', display: 'flex' }
+        ],
+        lines: [{}, {}, {}],
+        buttonburgers: [
+          { text: 'Регистрация', width: '150px', route: '/registration', display: 'flex' },
+          { text: 'Вход', width: '150px', route: '/authorization', display: 'flex' }
+        ],
+        closelines: [
+          { rotate: '130deg', offset: '0px 5px' },
+          { rotate: '-130deg', offset: '0px -4.75px' }
+        ],
+        isOpen: false,
+        userFound: false
+      };
     },
-  methods: {
-    toggleMenu() {
-      this.isOpen = !this.isOpen;
+    async mounted() {
+      this.checkUserAndUpdateButtons();
+      this.checkScreenWidth();
+      window.addEventListener('resize', this.checkScreenWidth);
+  
+      window.requestAnimationFrame(() => {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('show'); 
+            } else {
+              entry.target.classList.remove('show'); 
+            }
+          });
+        }, {
+          threshold: 0.1
+        });
+  
+        const hiddenElements = document.querySelectorAll('.hidden');
+        hiddenElements.forEach((el) => observer.observe(el));
+      });
     },
-  },
-};
-</script>
+    beforeDestroy() {
+      // Clean up event listener
+      window.removeEventListener('resize', this.checkScreenWidth);
+    },
+    methods: {
+      toggleMenu() {
+        this.isOpen = !this.isOpen;
+      },
+      
+      checkScreenWidth() {
+        if (window.innerWidth <= 900) {
+          this.buttons[0].display = 'none';
+          this.buttons[1].display = 'none';
+          if (this.userFound) {
+            this.buttonburgers[0].display = 'none';
+            this.buttonburgers[1].display = 'flex';
+            this.buttonburgers[1].text = 'Профиль';
+            this.buttonburgers[1].width = '100px';
+          } else {
+            this.buttonburgers[0].display = 'flex';
+            this.buttonburgers[1].display = 'flex';
+          }
+        } else {
+          this.buttons[0].display = 'flex';
+        this.buttons[1].display = 'flex';
+          if (this.userFound) {
+            this.buttons[0].display = 'none';
+            this.buttons[1].display = 'flex';
+            this.buttons[1].text = 'Профиль';
+            this.buttons[1].width = '100px';
+          } else {
+            this.buttons[0].display = 'flex';
+            this.buttons[1].display = 'flex';
+          }
+        }
+      },
+
+      checkUserAndUpdateButtons() {
+        this.$nextTick(async () => {
+        try {
+          const storedToken = localStorage.getItem('userToken');
+
+          if (!storedToken) {
+            console.log('No token found in local storage');
+            this.userFound = false;
+            this.checkScreenWidth();
+            return;
+          }
+
+          const response = await fetch('http://127.0.0.1:8000/users/?format=json', {
+            method: 'GET',
+            headers: {
+              Accept: 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+
+          const users = await response.json();
+          let userExists = false;
+
+          for (const user of users) {
+            if (user.token === storedToken) {
+             console.log('User found:', user.fullname);
+              userExists = true;
+              break; // Exit loop if token is found
+            }
+         }
+
+          this.userFound = userExists;
+          this.checkScreenWidth();
+
+        } catch (error) {
+        console.error('Error finding user:', error);
+        this.userFound = false;
+        this.checkScreenWidth();
+        }
+      });
+}
+
+    },
+  };
+  </script>
+  
+  
+  
 
 <style scoped>
 .router {
@@ -125,7 +197,6 @@ export default {
     height: 45px;
     border-radius: 15px;
     border: 1px solid #4077CE;
-    display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
@@ -180,7 +251,7 @@ export default {
 }
 
 .burger-menu {
-    display: none; /* Hidden by default */
+    display: none; 
     position: fixed;
     top: 0;
     left: 0;
@@ -201,7 +272,7 @@ export default {
 }
 
 .open-burger-menu-white {
-    width: 0px; /* Initially collapsed */
+    width: 0px; 
     height: 100%;
     background-color: white;
     z-index: 101;
@@ -211,13 +282,13 @@ export default {
     display: flex;
     padding-left: 15px;
     flex-direction: column;
-    transition: all 0.3s ease; /* Transition for width */
+    transition: all 0.3s ease;
     transition-delay: 2s;
 }
 
 .burger-menu.active .open-burger-menu-white {
     transition: all 0.5s ease;
-    width: 200px; /* Expand to full width */
+    width: 200px; 
     transition-delay: 2s;
 }
 
@@ -225,18 +296,18 @@ export default {
     width: 100%;
     height: 100%;
     background-color: black;
-    opacity: 0; /* Initially transparent */
+    opacity: 0; 
     z-index: 100;
     position: fixed;
     top: 0;
     left: 0;
-    transition: all 0.3s ease; /* Transition for opacity */
+    transition: all 0.3s ease; 
     transition-delay: 2s;
 }
 
 .burger-menu.active .open-burger-menu-black {
     transition: all 0.5s ease;
-    opacity: 0.5; /* Darkened background */
+    opacity: 0.5;
     transition-delay: 2s;
 }
 
@@ -258,6 +329,8 @@ export default {
     font-family: "Inter";
     font-size: 15px;
     font-weight: 600;
+    justify-content: center;
+    align-items: center;
     background-color: transparent;
     margin-top: 10px;
     transition: all 0.5s ease-out;
