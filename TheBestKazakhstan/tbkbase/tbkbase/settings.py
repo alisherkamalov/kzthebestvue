@@ -59,6 +59,7 @@ ROOT_URLCONF = 'tbkbase.urls'
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://f8fd-92-47-52-215.ngrok-free.app"
 ]
 CORS_ALLOW_ALL_ORIGINS = True
 TEMPLATES = [
